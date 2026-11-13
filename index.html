@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>منظومة إدارة النشاط الطلابي والجدول المدرسي والتكليفات الشاملة – الإصدار السادس 1448هـ</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+<header><h1>منظومة إدارة النشاط الطلابي والجدول المدرسي والتكليفات الشاملة</h1><p>الإصدار السادس 1448هـ · ثانوية أبي طلحة الأنصاري · تعليم المدينة المنورة · وزارة التعليم</p><div style="margin-top:6px"><button class="btn" onclick="saveNow()">💾 حفظ الآن</button> <button class="btn s" onclick="bkSave()">⬇ نسخة احتياطية</button> <button class="btn" style="background:var(--er)" onclick="resetAll()">♻ تصفير وإعادة التوزيع</button> <button class="btn s" onclick="redistAll()">↻ إعادة التوزيع فقط</button> <span id="sv" style="font-size:12px;opacity:.95"></span></div></header>
+<nav id="nav"></nav>
+<main id="main"></main>
+<div id="pa"></div>
+<div id="dm"></div>
+<div id="toast" style="display:none;position:fixed;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:14px;right:14px;background:#1f4e8c;color:#fff;padding:10px 14px;border-radius:10px;z-index:99;text-align:center"></div>
+<script src="lib/jszip.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
