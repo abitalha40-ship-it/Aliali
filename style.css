@@ -82,3 +82,19 @@ ul{padding-inline-start:20px}li{margin:4px 0}
 @media (max-width:720px){header{padding:16px}header h1{font-size:17px}main{padding:12px 10px}.card{padding:14px}nav button{font-size:12.5px;padding:6px 11px}}
 /* ---- */
 .mv{padding:2px 7px;font-size:12px;margin:0 2px}.tgl{margin-inline-start:8px;border-style:dashed}
+
+/* ===== القائمة الجانبية (الشاشات العريضة) ===== */
+@media (min-width: 900px){
+  body{display:grid;grid-template-columns:250px 1fr;grid-template-areas:"hd hd" "nv mn";min-height:100vh}
+  body > header{grid-area:hd}
+  body > nav{grid-area:nv;position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;overflow-x:hidden;flex-direction:column;align-items:stretch;gap:4px;padding:12px 10px;border-bottom:none;border-left:1px solid var(--bd);box-shadow:none;backdrop-filter:none;background:var(--card);z-index:10}
+  body > nav button{width:100%;text-align:start;border-radius:10px;padding:9px 12px;font-size:13.5px;white-space:normal;line-height:1.35}
+  body > nav button.on{box-shadow:0 2px 8px rgba(0,121,107,.25)}
+  body > main{grid-area:mn;min-width:0;max-width:none;padding:18px 22px 40px}
+  body > header h1{font-size:19px}
+}
+/* عناصر الطباعة والنوافذ المنبثقة لا تحجز مساحة في تخطيط الصفحة */
+body > #pa, body > #dm, body > #toast{position:fixed}
+@media (min-width: 900px){
+  body > main{width:100%;justify-self:stretch;margin:0;box-sizing:border-box}
+}

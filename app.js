@@ -568,6 +568,7 @@ views.push(function(){const A=minAlloc(),oc=occTC(),cur=S.mode==='min',sumEach=O
 let SAVEDAT='',TREN=null,GC='';
 function persist(){let ok=false;try{S.log=D.log;S.T=D.T;S.P=D.P;S.G=D.G}catch(e){}
  try{localStorage.setItem('act1448',JSON.stringify(S));ok=true}catch(e){}
+  try{localStorage.setItem('schoolShared_v1',JSON.stringify({schoolName:S.school||'',principalName:S.principal||'',coordinatorName:S.leader||''}))}catch(e){}
  try{if(ref&&ref.set){ref.set(S);ok=true}}catch(e){}
  SAVEDAT=ok?'تم الحفظ '+new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'}):'تعذّر الحفظ – نزّل نسخة احتياطية';const e=document.querySelector('#sv');if(e)e.textContent=SAVEDAT;return ok}
 let DIRTY=false;function save(){DIRTY=true;clearTimeout(tmr);tmr=setTimeout(persist,400)}
@@ -1288,3 +1289,11 @@ GROUPS.forEach((g,gi)=>{views.push(()=>groupView(gi));names.push(g[0])});
 (function(){const T=TM();const hide=new Set(T.hid||[]);GROUPS.forEach(g=>g[1].forEach(id=>hide.add(id)));T.hid=[...hide];save()})();
 try{go()}catch(e){}
 
+
+/* ===== تبويب المسابقات: أداة مستقلة تُعرض داخل إطار حتى لا تتعارض مع تنسيق الأداة ===== */
+views.push(function(){return '<div class="card"><h2>إدارة المسابقات الطلابية</h2><p class="mu">أداة مستقلة لإدارة المسابقات والجوائز والشهادات، تعمل داخل هذا التبويب.</p><iframe src="competitions.html" title="إدارة المسابقات" style="width:100%;height:78vh;min-height:520px;border:1px solid var(--bd);border-radius:12px;background:#fff"></iframe></div>'});
+names.push('إدارة المسابقات');
+try{go()}catch(e){}
+
+/* ===== توحيد بيانات المدرسة مع أداة المسابقات ===== */
+(function(){try{const sh=JSON.parse(localStorage.getItem('schoolShared_v1')||'null');if(sh){if(sh.schoolName)S.school=sh.schoolName;if(sh.principalName)S.principal=sh.principalName;if(sh.coordinatorName)S.leader=sh.coordinatorName}}catch(e){}})();

@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أداة إدارة المسابقات الطلابية</title>
+    <!-- تحميل Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- تحميل خط Cairo من Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.25s ease-in-out;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* إخفاء شريط التمرير مع السماح بالتمرير في التبويبات على الجوال */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* تنسيقات الطباعة للتقارير الرسمية والشهادات */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background-color: #ffffff !important;
+            }
+            #printableReport, #printableCertificate {
+                box-shadow: none !important;
+                border: none !important;
+                margin: 0 !important;
+                padding: 10px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            .print-only-cert #reports {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- الشريط العلوي والتنقل -->
+    <header class="bg-emerald-800 text-white shadow-md sticky top-0 z-40 no-print">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center gap-2">
+            <div class="flex items-center gap-3">
+                <div class="bg-emerald-700/80 border border-emerald-600 px-3 py-1.5 rounded-2xl shadow-inner flex items-center gap-1.5">
+                    <span class="text-xl">🏆</span>
+                    <span class="text-base sm:text-lg font-black tracking-tight">المسابقات</span>
+                </div>
+                <div>
+                    <h1 class="text-sm sm:text-lg font-bold leading-tight" id="schoolNameDisplay">ثانوية أبي طلحة الأنصاري</h1>
+                    <p class="text-[11px] sm:text-xs text-emerald-200" id="educationOfficeDisplay">الإدارة العامة للتعليم بمنطقة المدينة المنورة</p>
+                </div>
+            </div>
+            <button onclick="openSettings()" class="bg-emerald-700 hover:bg-emerald-600 active:scale-95 text-xs px-3.5 py-2.5 rounded-xl font-bold transition flex items-center gap-1.5 shadow-sm shrink-0">
+                <span>⚙️</span>
+                <span class="hidden sm:inline">إعدادات المدرسة</span>
+                <span class="sm:hidden">الإعدادات</span>
+            </button>
+        </div>
+
+        <!-- شريط التبويبات -->
+        <nav class="flex overflow-x-auto no-scrollbar bg-emerald-900/95 px-3 border-t border-emerald-700/50 text-xs sm:text-sm">
+            <button onclick="switchTab('dashboard', this)" class="tab-btn px-4 py-3.5 font-extrabold border-b-4 border-amber-400 whitespace-nowrap text-amber-300 transition">
+                📊 الرئيسية
+            </button>
+            <button onclick="switchTab('guide', this)" class="tab-btn px-4 py-3.5 font-semibold text-emerald-100 hover:bg-emerald-800/60 border-b-4 border-transparent whitespace-nowrap transition">
+                📚 دليل المسابقات
+            </button>
+            <button onclick="switchTab('myplan', this)" class="tab-btn px-4 py-3.5 font-semibold text-emerald-100 hover:bg-emerald-800/60 border-b-4 border-transparent whitespace-nowrap transition flex items-center gap-1.5">
+                <span>🗓️ خطتي</span>
+                <span id="planCountBadge" class="bg-emerald-700 text-amber-300 text-[11px] font-black px-2 py-0.5 rounded-full">0</span>
+            </button>
+            <button onclick="switchTab('awards', this)" class="tab-btn px-4 py-3.5 font-semibold text-emerald-100 hover:bg-emerald-800/60 border-b-4 border-transparent whitespace-nowrap transition">
+                🏅 سجل الجوائز
+            </button>
+            <button onclick="switchTab('reports', this)" class="tab-btn px-4 py-3.5 font-semibold text-emerald-100 hover:bg-emerald-800/60 border-b-4 border-transparent whitespace-nowrap transition">
+                📄 التقارير الرسمية
+            </button>
+        </nav>
+    </header>
+
+    <!-- المحتوى الرئيسي -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+
+        <!-- 1. تبويب الرئيسية (لوحة المؤشرات) -->
+        <div id="dashboard" class="tab-content active space-y-6">
+            <!-- بطاقات الإحصائيات الفورية -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3.5 hover:shadow-md transition">
+                    <div class="p-3 bg-emerald-50 text-emerald-600 rounded-2xl text-2xl shrink-0">📋</div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold">مسابقات الخطة</p>
+                        <h3 class="text-2xl font-black text-slate-800 mt-0.5" id="statPlanCount">0</h3>
+                    </div>
+                </div>
+                <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3.5 hover:shadow-md transition">
+                    <div class="p-3 bg-blue-50 text-blue-600 rounded-2xl text-2xl shrink-0">👥</div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold">الطلاب المشاركون</p>
+                        <h3 class="text-2xl font-black text-slate-800 mt-0.5" id="statStudentsCount">0</h3>
+                    </div>
+                </div>
+                <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3.5 hover:shadow-md transition">
+                    <div class="p-3 bg-amber-50 text-amber-600 rounded-2xl text-2xl shrink-0">⏳</div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold">ترشيحات للتقييم</p>
+                        <h3 class="text-2xl font-black text-slate-800 mt-0.5" id="statPendingCount">0</h3>
+                    </div>
+                </div>
+                <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3.5 hover:shadow-md transition">
+                    <div class="p-3 bg-purple-50 text-purple-600 rounded-2xl text-2xl shrink-0">🏅</div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold">إجمالي الجوائز</p>
+                        <h3 class="text-2xl font-black text-slate-800 mt-0.5" id="statAwardsCount">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- قسم التنبيهات والرسوم البيانية -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- قسم يحتاج انتباهك -->
+                <div class="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-extrabold text-amber-950 flex items-center gap-2 text-base">
+                                <span>⚡</span> يحتاج انتباهك
+                            </h3>
+                            <span class="text-[11px] bg-amber-200/70 text-amber-900 font-bold px-2.5 py-0.5 rounded-full">متابعة فورية</span>
+                        </div>
+                        <div id="attentionList" class="space-y-2.5 text-sm">
+                            <!-- يتم تعبئته تلقائياً -->
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-amber-200/60 flex justify-end">
+                        <button onclick="document.querySelectorAll('.tab-btn')[1].click()" class="text-xs font-bold text-amber-900 hover:text-amber-700 flex items-center gap-1">
+                            <span>استكشاف دليل المسابقات</span>
+                            <span>←</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- توزيع المشاركات حسب المجالات الخمسة -->
+                <div class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-extrabold text-slate-800 flex items-center gap-2 text-base">
+                            <span>📊</span> توزيع المسابقات والمشاركات حسب المجال
+                        </h3>
+                        <span class="text-xs text-slate-400 font-semibold">المجالات الخمسة</span>
+                    </div>
+                    <div class="space-y-4" id="domainStatsBars">
+                        <!-- يتم تعبئته تلقائياً -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. تبويب دليل المسابقات -->
+        <div id="guide" class="tab-content space-y-5">
+            <!-- شريط البحث والفلترة -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col lg:flex-row gap-3 justify-between items-stretch lg:items-center">
+                <div class="relative w-full lg:w-1/3">
+                    <input type="text" id="searchGuideInput" oninput="renderGuide()" placeholder="ابحث عن مسابقة بالاسم..." class="w-full pr-10 pl-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50">
+                    <span class="absolute right-3.5 top-3 text-slate-400 text-sm">🔍</span>
+                </div>
+                <div class="flex flex-wrap gap-2 w-full lg:w-auto items-center">
+                    <select id="filterDomain" onchange="renderGuide()" class="px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm bg-white font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 flex-grow sm:flex-grow-0">
+                        <option value="">جميع المجالات (5)</option>
+                        <option value="العلوم والتقنية">العلوم والتقنية</option>
+                        <option value="الثقافة والفنون">الثقافة والفنون</option>
+                        <option value="المواطنة والحياة">المواطنة والحياة</option>
+                        <option value="الرياضة والصحة">الرياضة والصحة</option>
+                        <option value="المجال الكشفي">المجال الكشفي</option>
+                    </select>
+                    <button id="mySchoolFilterBtn" onclick="toggleMySchoolFilter()" class="bg-emerald-50 text-emerald-800 border border-emerald-200 px-3.5 py-2.5 rounded-xl text-xs font-bold hover:bg-emerald-100 transition flex items-center gap-1.5">
+                        <span>🏫</span>
+                        <span>مناسبة لمدرستي</span>
+                    </button>
+                    <button onclick="openAddCustomModal()" class="bg-emerald-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-emerald-700 active:scale-95 transition flex items-center gap-1.5 shadow-sm">
+                        <span>➕</span>
+                        <span>مسابقة خاصة بالمدرسة</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- شبكة بطاقات المسابقات -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="guideContainer">
+                <!-- يتم العرض بواسطة JS -->
+            </div>
+        </div>
+
+        <!-- 3. تبويب خطتي للمسابقات -->
+        <div id="myplan" class="tab-content space-y-5">
+            <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div>
+                    <h3 class="font-extrabold text-slate-800 text-lg">خطة المسابقات المعتمدة للمدرسة</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">إدارة الترشيحات، تقييم الطلاب من 100، وتحديث النتائج والجوائز.</p>
+                </div>
+                <div class="flex items-center gap-2 self-end sm:self-auto">
+                    <span class="bg-emerald-100 text-emerald-800 text-xs font-extrabold px-3.5 py-1.5 rounded-full" id="planBadgeCount">0 مسابقات</span>
+                </div>
+            </div>
+
+            <div class="space-y-4" id="planContainer">
+                <!-- يتم العرض بواسطة JS -->
+            </div>
+        </div>
+
+        <!-- 4. تبويب سجل الجوائز والإنجازات -->
+        <div id="awards" class="tab-content space-y-5">
+            <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div>
+                    <h3 class="font-extrabold text-slate-800 text-lg">سجل الجوائز والإنجازات الطلابية</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">متابعة المراكز المتقدمة، إرسال تهنئة ولي الأمر عبر واتساب، وإصدار شهادات الشكر.</p>
+                </div>
+                <button onclick="openBulkCertificatesModal()" class="bg-indigo-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm hover:bg-indigo-700 active:scale-95 transition flex items-center gap-1.5">
+                    <span>📜</span>
+                    <span>معاينة وطباعة شهادات الشكر</span>
+                </button>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-x-auto">
+                <table class="w-full text-right border-collapse min-w-[600px]">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-600 text-xs border-b border-slate-200">
+                            <th class="p-3.5 font-bold">اسم الطالب</th>
+                            <th class="p-3.5 font-bold">الصف</th>
+                            <th class="p-3.5 font-bold">المسابقة</th>
+                            <th class="p-3.5 font-bold">الدرجة</th>
+                            <th class="p-3.5 font-bold">النتيجة / الجائزة</th>
+                            <th class="p-3.5 font-bold no-print">إجراءات التكريم</th>
+                        </tr>
+                    </thead>
+                    <tbody id="awardsTableBody" class="text-sm divide-y divide-slate-100">
+                        <!-- يتم العرض بواسطة JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 5. تبويب التقارير الرسمية -->
+        <div id="reports" class="tab-content space-y-5">
+            <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 no-print">
+                <div>
+                    <h3 class="font-extrabold text-slate-800 text-lg">التقرير الختامي المعتمد</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">نموذج رسمي بترويسة وزارة التعليم جاهز للطباعة المباشرة أو الحفظ بصيغة PDF.</p>
+                </div>
+                <button onclick="printOfficialReport()" class="bg-emerald-800 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-emerald-700 active:scale-95 transition shadow-sm flex items-center gap-2">
+                    <span>🖨️</span>
+                    <span>طباعة التقرير / حفظ PDF</span>
+                </button>
+            </div>
+
+            <!-- ورقة التقرير القابلة للطباعة -->
+            <div class="bg-white p-6 sm:p-10 rounded-2xl shadow-sm border border-slate-200 max-w-4xl mx-auto space-y-6" id="printableReport">
+                <!-- ترويسة وزارة التعليم -->
+                <div class="flex flex-col sm:flex-row justify-between items-center border-b-2 border-emerald-800 pb-5 gap-4 text-center sm:text-right">
+                    <div class="space-y-1">
+                        <h2 class="text-base sm:text-lg font-black text-slate-800">المملكة العربية السعودية</h2>
+                        <p class="text-xs sm:text-sm font-bold text-emerald-800">وزارة التعليم</p>
+                        <p class="text-xs font-semibold text-slate-600" id="reportMinistryHeader">الإدارة العامة للتعليم بمنطقة المدينة المنورة</p>
+                        <p class="text-xs font-bold text-slate-700" id="reportSchoolHeader">مدرسة: ثانوية أبي طلحة الأنصاري</p>
+                    </div>
+                    <div class="bg-emerald-50 border border-emerald-200 px-4 py-3 rounded-2xl text-center">
+                        <span class="text-2xl block mb-1">🇸🇦</span>
+                        <p class="text-[11px] font-bold text-emerald-900">النشاط الطلابي - المسابقات</p>
+                        <p class="text-[10px] text-slate-500" id="reportDateDisplay">العام الدراسي 1448هـ</p>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <h3 class="text-base sm:text-lg font-black text-slate-800 bg-slate-100 py-2 px-4 rounded-xl inline-block">
+                        التقرير الختامي لإنجازات المسابقات الطلابية
+                    </h3>
+                </div>
+
+                <!-- ملخص المؤشرات -->
+                <div class="grid grid-cols-3 gap-3 sm:gap-4 text-center">
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                        <p class="text-[11px] sm:text-xs text-slate-500 font-semibold">المسابقات المنفذة</p>
+                        <p class="text-xl sm:text-2xl font-black text-emerald-800 mt-1" id="repTotalComps">0</p>
+                    </div>
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                        <p class="text-[11px] sm:text-xs text-slate-500 font-semibold">إجمالي المشاركين</p>
+                        <p class="text-xl sm:text-2xl font-black text-blue-800 mt-1" id="repTotalStudents">0</p>
+                    </div>
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                        <p class="text-[11px] sm:text-xs text-slate-500 font-semibold">الجوائز والمراكز</p>
+                        <p class="text-xl sm:text-2xl font-black text-amber-700 mt-1" id="repTotalAwards">0</p>
+                    </div>
+                </div>
+
+                <!-- جدول النتائج -->
+                <div>
+                    <h4 class="font-bold text-slate-800 mb-2.5 text-sm">سجل الطلاب المشاركين والنتائج المحققة:</h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right border-collapse border border-slate-300 text-xs">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-800">
+                                    <th class="p-2.5 border border-slate-300 w-10 text-center">م</th>
+                                    <th class="p-2.5 border border-slate-300">اسم الطالب</th>
+                                    <th class="p-2.5 border border-slate-300">الصف</th>
+                                    <th class="p-2.5 border border-slate-300">المسابقة</th>
+                                    <th class="p-2.5 border border-slate-300 text-center">الدرجة</th>
+                                    <th class="p-2.5 border border-slate-300">النتيجة / الجائزة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportTableBody">
+                                <!-- يتم العرض بواسطة JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- التواقيع والاعتماد -->
+                <div class="grid grid-cols-2 gap-6 pt-8 mt-6 border-t border-slate-200 text-xs font-bold text-slate-800">
+                    <div class="space-y-2">
+                        <p class="text-emerald-800">رائد النشاط الطلابي:</p>
+                        <p>الاسم / <span id="reportCoordinatorName">علي صالح الأحمدي</span></p>
+                        <p class="pt-3 text-slate-500">التوقيع: ........................................</p>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="text-emerald-800">مدير المدرسة:</p>
+                        <p>الاسم / <span id="reportPrincipalName">أنس سالم الصيدلاني</span></p>
+                        <p class="pt-3 text-slate-500">التوقيع والختم: ................................</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- إشعار Toast عائم أنيق بدل alert -->
+    <div id="toastNotification" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl text-xs sm:text-sm font-bold flex items-center gap-2.5 z-50 transition-all duration-300 opacity-0 pointer-events-none translate-y-4">
+        <span id="toastIcon">✅</span>
+        <span id="toastMessage">تم الحفظ بنجاح</span>
+    </div>
+
+    <!-- نافذة إعدادات المدرسة -->
+    <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden justify-center items-center z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-100">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-extrabold text-lg text-slate-800">⚙️ إعدادات بيانات المدرسة</h3>
+                <button onclick="closeSettings()" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg">✕</button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs font-bold text-slate-600 block mb-1">اسم المدرسة</label>
+                    <input type="text" id="settingSchoolName" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-600 block mb-1">المرحلة الدراسية للمدرسة</label>
+                    <select id="settingSchoolStage" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <option value="المرحلة الثانوية">المرحلة الثانوية</option>
+                        <option value="المرحلة المتوسطة">المرحلة المتوسطة</option>
+                        <option value="المرحلة الابتدائية">المرحلة الابتدائية</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-600 block mb-1">إدارة التعليم</label>
+                    <input type="text" id="settingEducationOffice" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-bold text-slate-600 block mb-1">اسم رائد النشاط</label>
+                        <input type="text" id="settingCoordinatorName" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-600 block mb-1">اسم مدير المدرسة</label>
+                        <input type="text" id="settingPrincipalName" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-3 border-t">
+                <button onclick="closeSettings()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition">إلغاء</button>
+                <button onclick="saveSettings()" class="px-5 py-2.5 bg-emerald-800 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm">حفظ البيانات</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة إضافة مسابقة خاصة بالمدرسة -->
+    <div id="customCompModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden justify-center items-center z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-100">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-extrabold text-lg text-slate-800">➕ إضافة مسابقة خاصة بالمدرسة</h3>
+                <button onclick="closeAddCustomModal()" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg">✕</button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs font-bold text-slate-600 block mb-1">اسم المسابقة</label>
+                    <input type="text" id="customName" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="مثال: مسابقة فرسان الإلقاء المدرسية">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-600 block mb-1">المجال</label>
+                    <select id="customDomain" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <option value="العلوم والتقنية">العلوم والتقنية</option>
+                        <option value="الثقافة والفنون">الثقافة والفنون</option>
+                        <option value="المواطنة والحياة">المواطنة والحياة</option>
+                        <option value="الرياضة والصحة">الرياضة والصحة</option>
+                        <option value="المجال الكشفي">المجال الكشفي</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-600 block mb-1">المرحلة المستهدفة</label>
+                    <select id="customStage" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <option value="جميع المراحل">جميع المراحل</option>
+                        <option value="المرحلة الثانوية">المرحلة الثانوية</option>
+                        <option value="المرحلة المتوسطة">المرحلة المتوسطة</option>
+                        <option value="المرحلة الابتدائية">المرحلة الابتدائية</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-3 border-t">
+                <button onclick="closeAddCustomModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition">إلغاء</button>
+                <button onclick="saveCustomComp()" class="px-5 py-2.5 bg-emerald-800 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm">إضافة واعتماد في الخطة</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة إدارة المشاركين والتقييم -->
+    <div id="studentsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden justify-center items-center z-50 p-3 sm:p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-5 sm:p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto border border-slate-100">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h3 class="font-extrabold text-base sm:text-lg text-slate-800" id="modalCompTitle">إدارة المشاركين</h3>
+                    <p class="text-[11px] text-slate-500">أضف الطلاب، أدخل درجة التقييم من 100، وحدد النتيجة النهائية.</p>
+                </div>
+                <button onclick="closeStudentsModal()" class="text-slate-400 hover:text-slate-700 bg-slate-100 w-8 h-8 rounded-xl flex items-center justify-center font-bold">✕</button>
+            </div>
+
+            <!-- نموذج إضافة طالب -->
+            <div class="bg-emerald-50/70 p-3.5 rounded-2xl border border-emerald-100 space-y-2.5">
+                <h4 class="text-xs font-extrabold text-emerald-900">➕ تسجيل طالب مرشح جديد:</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <input type="text" id="newStudentName" placeholder="اسم الطالب الثلاثي" class="px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <input type="text" id="newStudentClass" placeholder="الصف (مثال: أول ثانوي / أ)" class="px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <button onclick="addStudentToComp()" class="bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-3 rounded-xl transition shadow-sm">تسجيل الطالب</button>
+                </div>
+            </div>
+
+            <!-- جدول الطلاب المسجلين -->
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+                <table class="w-full text-right text-xs min-w-[500px]">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-700 border-b border-slate-200">
+                            <th class="p-2.5 font-bold">اسم الطالب</th>
+                            <th class="p-2.5 font-bold">الصف</th>
+                            <th class="p-2.5 font-bold text-center">التقييم (100)</th>
+                            <th class="p-2.5 font-bold">القرار / الجائزة</th>
+                            <th class="p-2.5 font-bold text-center">حذف</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalStudentsList" class="divide-y divide-slate-100">
+                        <!-- يتم التحميل عبر JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-between items-center pt-2">
+                <span class="text-[11px] text-slate-400">يتم الحفظ تلقائياً عند أي تعديل</span>
+                <button onclick="closeStudentsModal()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة رابط الترشيح ورمز QR الافتراضي -->
+    <div id="qrModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden justify-center items-center z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-slate-100">
+            <div class="flex justify-between items-center border-b pb-2">
+                <span class="text-xs font-extrabold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg">بوابة ترشيح الطلاب</span>
+                <button onclick="closeQrModal()" class="text-slate-400 hover:text-slate-700 font-bold">✕</button>
+            </div>
+            <h4 class="font-extrabold text-slate-800 text-base" id="qrCompName">اسم المسابقة</h4>
+            <!-- رمز QR SVG مدمج -->
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 inline-block mx-auto">
+                <svg class="w-36 h-36 text-slate-800 mx-auto" viewBox="0 0 100 100" fill="currentColor">
+                    <path d="M10,10 h25 v25 h-25 z M15,15 v15 h15 v-15 z M20,20 h5 v5 h-5 z"/>
+                    <path d="M65,10 h25 v25 h-25 z M70,15 v15 h15 v-15 z M75,20 h5 v5 h-5 z"/>
+                    <path d="M10,65 h25 v25 h-25 z M15,70 v15 h15 v-15 z M20,75 h5 v5 h-5 z"/>
+                    <rect x="42" y="12" width="6" height="6"/><rect x="52" y="18" width="6" height="12"/>
+                    <rect x="42" y="32" width="12" height="6"/><rect x="15" y="45" width="15" height="6"/>
+                    <rect x="38" y="45" width="10" height="10"/><rect x="55" y="42" width="8" height="16"/>
+                    <rect x="70" y="45" width="18" height="6"/><rect x="45" y="65" width="6" height="22"/>
+                    <rect x="58" y="65" width="12" height="6"/><rect x="75" y="70" width="15" height="15"/>
+                    <rect x="58" y="80" width="10" height="8"/>
+                </svg>
+                <p class="text-[11px] font-mono font-bold text-emerald-800 mt-2 tracking-wider" id="qrCodeText">CODE-1448</p>
+            </div>
+            <div class="bg-slate-100 p-2.5 rounded-xl flex items-center justify-between gap-2 text-xs">
+                <input type="text" id="qrLinkInput" readonly class="bg-transparent text-slate-600 w-full outline-none text-left font-mono text-[11px]">
+                <button onclick="copyNominationLink()" class="bg-emerald-800 text-white px-3 py-1.5 rounded-lg font-bold shrink-0 hover:bg-emerald-700">نسخ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة معاينة وطباعة شهادات الشكر والتقدير -->
+    <div id="certModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden justify-center items-center z-50 p-3 sm:p-4">
+        <div class="bg-white rounded-2xl max-w-3xl w-full p-5 sm:p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3 no-print">
+                <h3 class="font-extrabold text-lg text-slate-800">📜 شهادة شكر وتقدير</h3>
+                <div class="flex items-center gap-2">
+                    <button onclick="window.print()" class="bg-emerald-800 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-700">🖨️ طباعة الشهادة</button>
+                    <button onclick="closeCertModal()" class="bg-slate-100 text-slate-700 px-3 py-2 rounded-xl text-xs font-bold">إغلاق</button>
+                </div>
+            </div>
+            <div id="printableCertificate" class="space-y-6">
+                <!-- يتم توليد الشهادات هنا -->
+            </div>
+        </div>
+    </div>
+
+    <!-- منطق التطبيق التفاعلي -->
+    <script>
+        // البيانات الافتراضية والتحميل من التخزين المحلي
+        const defaultState = {
+            schoolName: "ثانوية أبي طلحة الأنصاري",
+            schoolStage: "المرحلة الثانوية",
+            educationOffice: "الإدارة العامة للتعليم بمنطقة المدينة المنورة",
+            coordinatorName: "علي صالح الأحمدي",
+            principalName: "أنس سالم الصيدلاني",
+            myPlan: [
+                { id: 1, name: "مسابقة أقرأ (إثراء)", domain: "الثقافة والفنون", stage: "المرحلة الثانوية" },
+                { id: 2, name: "مسابقة المعرفة الإحصائية", domain: "العلوم والتقنية", stage: "المرحلة الثانوية" }
+            ],
+            studentsData: {
+                1: [
+                    { id: 101, name: "نواف سعد خالد القحطاني", class: "الثالث ثانوي / أ", score: 96, result: "مركز أول" },
+                    { id: 102, name: "ماجد أحمد الشهري", class: "الثاني ثانوي / ب", score: 88, result: "مشارك" }
+                ],
+                2: [
+                    { id: 201, name: "بندر خالد منصور الزهراني", class: "الأول ثانوي / أ", score: 92, result: "مركز ثاني" }
+                ]
+            },
+            customComps: []
+        };
+
+        let appData = JSON.parse(localStorage.getItem('schoolCompsData_v2')) || defaultState;
+         (function(){try{const sh=JSON.parse(localStorage.getItem('schoolShared_v1')||'null');if(sh){if(sh.schoolName)appData.schoolName=sh.schoolName;if(sh.principalName)appData.principalName=sh.principalName;if(sh.coordinatorName)appData.coordinatorName=sh.coordinatorName}}catch(e){}})();
+        let filterOnlyMySchool = false;
+        let activeCompIdForModal = null;
+
+        // قائمة المسابقات المعتمدة في الدليل
+        const defaultGuide = [
+            { id: 1, name: "مسابقة أقرأ (إثراء)", domain: "الثقافة والفنون", stage: "المرحلة الثانوية", status: "مفتوح التسجيل" },
+            { id: 2, name: "مسابقة المعرفة الإحصائية", domain: "العلوم والتقنية", stage: "جميع المراحل", status: "مفتوح التسجيل" },
+            { id: 3, name: "أولمبياد العلوم والرياضيات (كاوْست)", domain: "العلوم والتقنية", stage: "المرحلة الثانوية", status: "مفتوح التسجيل" },
+            { id: 4, name: "مسابقة المهارات الأدبية (الخطابة والإلقاء)", domain: "الثقافة والفنون", stage: "المرحلة الثانوية", status: "مفتوح التسجيل" },
+            { id: 5, name: "مسابقة القرآن الكريم والسنة النبوية (تدبر)", domain: "المواطنة والحياة", stage: "جميع المراحل", status: "مفتوح التسجيل" },
+            { id: 6, name: "دوري المدارس لكرة القدم والألعاب المختلفة", domain: "الرياضة والصحة", stage: "جميع المراحل", status: "مفتوح التسجيل" },
+            { id: 7, name: "مسابقة المشروع الكشفي لخدمة المجتمع", domain: "المجال الكشفي", stage: "المرحلة الثانوية", status: "قادم قريباً" },
+            { id: 8, name: "الأولمبياد الوطني للإبداع العلمي (إبداع)", domain: "العلوم والتقنية", stage: "المرحلة الثانوية", status: "مفتوح التسجيل" },
+            { id: 9, name: "مسابقة نزاهة لتعزيز قيم النزاهة", domain: "المواطنة والحياة", stage: "جميع المراحل", status: "مفتوح التسجيل" },
+            { id: 10, name: "مسابقة بيبراس موهبة للمعلوماتية", domain: "العلوم والتقنية", stage: "المرحلة المتوسطة", status: "مفتوح التسجيل" },
+            { id: 11, name: "مسابقة تحدي القراءة العربي", domain: "الثقافة والفنون", stage: "جميع المراحل", status: "مفتوح التسجيل" },
+            { id: 12, name: "مسابقة السلامة المرورية (سلامتنا)", domain: "المواطنة والحياة", stage: "المرحلة الابتدائية", status: "مفتوح التسجيل" }
+        ];
+
+        // دالة إظهار الإشعارات الأنيقة (بديل alert)
+        let toastTimeout;
+        function showToast(message, icon = "✅") {
+            const toast = document.getElementById('toastNotification');
+            document.getElementById('toastMessage').innerText = message;
+            document.getElementById('toastIcon').innerText = icon;
+            toast.classList.remove('opacity-0', 'translate-y-4');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-4');
+            }, 3000);
+        }
+
+        // حفظ البيانات وتحديث الواجهة
+        function saveData() {
+            try {
+                localStorage.setItem('schoolCompsData_v2', JSON.stringify(appData));
+                 localStorage.setItem('schoolShared_v1', JSON.stringify({schoolName:appData.schoolName,principalName:appData.principalName,coordinatorName:appData.coordinatorName}));
+            } catch (e) {
+                console.error("خطأ في الحفظ المحلي:", e);
+            }
+            updateDashboard();
+        }
+
+        // التنقل بين التبويبات
+        function switchTab(tabId, btnElement) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-amber-400', 'text-amber-300', 'font-extrabold');
+                btn.classList.add('border-transparent', 'text-emerald-100', 'font-semibold');
+            });
+
+            document.getElementById(tabId).classList.add('active');
+            if (btnElement) {
+                btnElement.classList.remove('border-transparent', 'text-emerald-100', 'font-semibold');
+                btnElement.classList.add('border-amber-400', 'text-amber-300', 'font-extrabold');
+            }
+
+            if (tabId === 'guide') renderGuide();
+            if (tabId === 'myplan') renderMyPlan();
+            if (tabId === 'awards') renderAwards();
+            if (tabId === 'reports') renderReports();
+        }
+
+        // تحديث الهوية في الواجهة
+        function syncHeaderInfo() {
+            document.getElementById('schoolNameDisplay').innerText = appData.schoolName;
+            document.getElementById('educationOfficeDisplay').innerText = appData.educationOffice;
+        }
+
+        // 1. تحديث لوحة المؤشرات الرئيسية
+        function updateDashboard() {
+            const totalPlan = appData.myPlan.length;
+            let totalStudents = 0;
+            let pendingCount = 0;
+            let totalAwards = 0;
+            let attentionItems = [];
+
+            appData.myPlan.forEach(comp => {
+                const students = appData.studentsData[comp.id] || [];
+                totalStudents += students.length;
+                if (students.length === 0) {
+                    attentionItems.push(`مسابقة <strong>"${comp.name}"</strong> مضافة في خطتك ولم يتم ترشيح طلاب لها بعد.`);
+                }
+                students.forEach(s => {
+                    if (s.result === 'مشارك') {
+                        pendingCount++;
+                    } else if (s.result) {
+                        totalAwards++;
+                    }
+                });
+            });
+
+            document.getElementById('statPlanCount').innerText = totalPlan;
+            document.getElementById('statStudentsCount').innerText = totalStudents;
+            document.getElementById('statPendingCount').innerText = pendingCount;
+            document.getElementById('statAwardsCount').innerText = totalAwards;
+            document.getElementById('planCountBadge').innerText = totalPlan;
+
+            // تحديث قسم يحتاج انتباهك
+            const attentionContainer = document.getElementById('attentionList');
+            if (pendingCount > 0) {
+                attentionItems.unshift(`يوجد <strong>${pendingCount}</strong> طالب/طلاب بانتظار اعتماد النتيجة النهائية بعد التقييم.`);
+            }
+            if (attentionItems.length === 0) {
+                attentionContainer.innerHTML = `<div class="bg-white/80 p-3 rounded-xl border border-amber-200/50 text-xs text-emerald-800 font-bold">✨ عمل رائع! جميع مسابقات خطتك محدثة ومكتملة البيانات.</div>`;
+            } else {
+                attentionContainer.innerHTML = attentionItems.slice(0, 4).map(item => `
+                    <div class="bg-white/90 p-3 rounded-xl border border-amber-200/60 text-xs text-slate-700 flex items-start gap-2">
+                        <span class="text-amber-600 mt-0.5">●</span>
+                        <span>${item}</span>
+                    </div>
+                `).join('');
+            }
+
+            // تحديث الرسم البياني للمجالات الخمسة
+            const domains = [
+                { name: "العلوم والتقنية", color: "bg-blue-600" },
+                { name: "الثقافة والفنون", color: "bg-purple-600" },
+                { name: "المواطنة والحياة", color: "bg-emerald-600" },
+                { name: "الرياضة والصحة", color: "bg-amber-500" },
+                { name: "المجال الكشفي", color: "bg-teal-600" }
+            ];
+
+            let maxVal = 1;
+            const domainStats = domains.map(d => {
+                let compCount = 0;
+                let stuCount = 0;
+                appData.myPlan.forEach(p => {
+                    if (p.domain === d.name) {
+                        compCount++;
+                        stuCount += (appData.studentsData[p.id] || []).length;
+                    }
+                });
+                if (stuCount > maxVal) maxVal = stuCount;
+                return { ...d, compCount, stuCount };
+            });
+
+            document.getElementById('domainStatsBars').innerHTML = domainStats.map(d => {
+                const widthPercent = d.stuCount > 0 ? Math.max(12, Math.round((d.stuCount / maxVal) * 100)) : (d.compCount > 0 ? 8 : 0);
+                return `
+                    <div>
+                        <div class="flex justify-between text-xs mb-1.5 font-bold text-slate-700">
+                            <span>${d.name}</span>
+                            <span class="text-slate-500 font-semibold">${d.compCount} مسابقات • ${d.stuCount} مشارك</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                            <div class="${d.color} h-full rounded-full transition-all duration-500" style="width: ${widthPercent}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 2. دليل المسابقات
+        function toggleMySchoolFilter() {
+            filterOnlyMySchool = !filterOnlyMySchool;
+            const btn = document.getElementById('mySchoolFilterBtn');
+            if (filterOnlyMySchool) {
+                btn.classList.remove('bg-emerald-50', 'text-emerald-800');
+                btn.classList.add('bg-emerald-800', 'text-white');
+                showToast(`تم تفعيل فلتر: ${appData.schoolStage}`, "🏫");
+            } else {
+                btn.classList.remove('bg-emerald-800', 'text-white');
+                btn.classList.add('bg-emerald-50', 'text-emerald-800');
+                showToast("تم عرض مسابقات جميع المراحل", "📚");
+            }
+            renderGuide();
+        }
+
+        function renderGuide() {
+            const container = document.getElementById('guideContainer');
+            const search = document.getElementById('searchGuideInput').value.trim().toLowerCase();
+            const domainFilter = document.getElementById('filterDomain').value;
+
+            const allComps = [...defaultGuide, ...appData.customComps];
+            const filtered = allComps.filter(comp => {
+                if (search && !comp.name.toLowerCase().includes(search)) return false;
+                if (domainFilter && comp.domain !== domainFilter) return false;
+                if (filterOnlyMySchool && comp.stage !== "جميع المراحل" && comp.stage !== appData.schoolStage) return false;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="col-span-full bg-white p-8 rounded-2xl text-center text-slate-400 border border-slate-100">لا توجد مسابقات مطابقة لخيارات البحث الحالية.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(comp => {
+                const isInPlan = appData.myPlan.some(p => p.id === comp.id);
+                return `
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between space-y-4 hover:border-emerald-200 transition">
+                        <div>
+                            <div class="flex justify-between items-start gap-2">
+                                <span class="text-[11px] bg-emerald-50 text-emerald-800 font-extrabold px-2.5 py-1 rounded-lg">${comp.domain}</span>
+                                <span class="text-[11px] font-bold ${comp.status === 'مفتوح التسجيل' ? 'text-emerald-600' : 'text-amber-600'}">● ${comp.status}</span>
+                            </div>
+                            <h4 class="font-extrabold text-slate-800 mt-3 text-base leading-snug">${comp.name}</h4>
+                            <p class="text-xs text-slate-500 mt-2 flex items-center gap-1.5">
+                                <span>🎯</span>
+                                <span>الفئة المستهدفة: <strong>${comp.stage}</strong></span>
+                            </p>
+                        </div>
+                        <div class="pt-3 border-t border-slate-100 flex justify-between items-center">
+                            <span class="text-[11px] text-slate-400 font-semibold">دليل النشاط 1448هـ</span>
+                            ${isInPlan ?
+                                `<span class="text-xs bg-slate-100 text-slate-600 font-bold px-3.5 py-2 rounded-xl flex items-center gap-1"><span>✓</span> في خطتي</span>` :
+                                `<button onclick="addToPlan(${comp.id})" class="bg-emerald-800 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-sm">+ أضف إلى خطتي</button>`
+                            }
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addToPlan(id) {
+            const allComps = [...defaultGuide, ...appData.customComps];
+            const comp = allComps.find(c => c.id === id);
+            if (comp && !appData.myPlan.some(p => p.id === id)) {
+                appData.myPlan.push({ id: comp.id, name: comp.name, domain: comp.domain, stage: comp.stage });
+                if (!appData.studentsData[id]) appData.studentsData[id] = [];
+                saveData();
+                renderGuide();
+                showToast(`تمت إضافة "${comp.name}" إلى خطتك`);
+            }
+        }
+
+        // 3. خطتي للمسابقات
+        function renderMyPlan() {
+            const container = document.getElementById('planContainer');
+            document.getElementById('planBadgeCount').innerText = `${appData.myPlan.length} مسابقات`;
+
+            if (appData.myPlan.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white p-10 rounded-2xl text-center space-y-3 border border-slate-100">
+                        <div class="text-4xl">📋</div>
+                        <h4 class="font-bold text-slate-700">خطتك فارغة حالياً</h4>
+                        <p class="text-xs text-slate-500 max-w-md mx-auto">انتقل إلى تبويب "دليل المسابقات" واختر المسابقات المناسبة لطلاب مدرستك لإضافتها هنا.</p>
+                        <button onclick="document.querySelectorAll('.tab-btn')[1].click()" class="bg-emerald-800 text-white text-xs font-bold px-5 py-2.5 rounded-xl mt-2">الذهاب لدليل المسابقات</button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = appData.myPlan.map(comp => {
+                const students = appData.studentsData[comp.id] || [];
+                const winnersCount = students.filter(s => s.result && s.result !== 'مشارك').length;
+
+                return `
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[11px] bg-emerald-50 text-emerald-800 font-extrabold px-2.5 py-1 rounded-lg">${comp.domain}</span>
+                                    <span class="text-[11px] text-slate-400 font-semibold">${comp.stage || appData.schoolStage}</span>
+                                </div>
+                                <h4 class="font-extrabold text-slate-800 text-base sm:text-lg mt-1.5">${comp.name}</h4>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                                <button onclick="openStudentsModal(${comp.id})" class="flex-grow md:flex-grow-0 bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm">
+                                    <span>👥</span>
+                                    <span>إدارة المشاركين والتقييم (${students.length})</span>
+                                </button>
+                                <button onclick="openQrModal(${comp.id}, '${comp.name.replace(/'/g, "\\'")}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3.5 py-2.5 rounded-xl transition flex items-center gap-1">
+                                    <span>🔗</span>
+                                    <span>رابط الترشيح</span>
+                                </button>
+                                <button onclick="removeFromPlan(${comp.id})" class="bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold px-3 py-2.5 rounded-xl transition">
+                                    حذف
+                                </button>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 px-4 py-2.5 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 border border-slate-100">
+                            <div class="flex items-center gap-4">
+                                <span>الطلاب المسجلون: <strong class="text-slate-900">${students.length}</strong></span>
+                                <span>الحاصلون على جوائز: <strong class="text-emerald-700">${winnersCount}</strong></span>
+                            </div>
+                            <span class="text-[11px] text-emerald-700 font-bold">● نشطة في خطة المدرسة</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function removeFromPlan(id) {
+            appData.myPlan = appData.myPlan.filter(p => p.id !== id);
+            delete appData.studentsData[id];
+            saveData();
+            renderMyPlan();
+            showToast("تمت إزالة المسابقة من الخطة", "🗑️");
+        }
+
+        // إدارة نافذة المشاركين والتقييم
+        function openStudentsModal(compId) {
+            activeCompIdForModal = compId;
+            const comp = appData.myPlan.find(p => p.id === compId);
+            document.getElementById('modalCompTitle').innerText = comp ? comp.name : "إدارة المشاركين";
+            renderModalStudentsList();
+            document.getElementById('studentsModal').classList.remove('hidden');
+            document.getElementById('studentsModal').classList.add('flex');
+        }
+
+        function closeStudentsModal() {
+            document.getElementById('studentsModal').classList.add('hidden');
+            document.getElementById('studentsModal').classList.remove('flex');
+            saveData();
+            renderMyPlan();
+        }
+
+        function addStudentToComp() {
+            const nameInput = document.getElementById('newStudentName');
+            const classInput = document.getElementById('newStudentClass');
+            const name = nameInput.value.trim();
+            const sClass = classInput.value.trim();
+
+            if (!name || !sClass) {
+                showToast("يرجى إدخال اسم الطالب والصف الدراسي", "⚠️");
+                return;
+            }
+
+            if (!appData.studentsData[activeCompIdForModal]) {
+                appData.studentsData[activeCompIdForModal] = [];
+            }
+
+            appData.studentsData[activeCompIdForModal].push({
+                id: Date.now(),
+                name: name,
+                class: sClass,
+                score: 90,
+                result: 'مشارك'
+            });
+
+            nameInput.value = '';
+            classInput.value = '';
+            renderModalStudentsList();
+            saveData();
+            showToast(`تم تسجيل الطالب: ${name}`);
+        }
+
+        function renderModalStudentsList() {
+            const students = appData.studentsData[activeCompIdForModal] || [];
+            const tbody = document.getElementById('modalStudentsList');
+
+            if (students.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">لا يوجد طلاب مسجلون في هذه المسابقة بعد.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = students.map((s, idx) => `
+                <tr class="hover:bg-slate-50/80">
+                    <td class="p-2.5 font-bold text-slate-800">${s.name}</td>
+                    <td class="p-2.5 text-slate-600">${s.class}</td>
+                    <td class="p-2.5 text-center">
+                        <input type="number" min="0" max="100" value="${s.score}" onchange="updateStudentField(${activeCompIdForModal}, ${idx}, 'score', this.value)" class="w-16 px-2 py-1 border border-slate-200 rounded-lg text-center font-bold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </td>
+                    <td class="p-2.5">
+                        <select onchange="updateStudentField(${activeCompIdForModal}, ${idx}, 'result', this.value)" class="px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs bg-white font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="مشارك" ${s.result === 'مشارك' ? 'selected' : ''}>مشارك</option>
+                            <option value="مركز أول" ${s.result === 'مركز أول' ? 'selected' : ''}>مركز أول 🥇</option>
+                            <option value="مركز ثاني" ${s.result === 'مركز ثاني' ? 'selected' : ''}>مركز ثاني 🥈</option>
+                            <option value="مركز ثالث" ${s.result === 'مركز ثالث' ? 'selected' : ''}>مركز ثالث 🥉</option>
+                            <option value="شهادة تقدير" ${s.result === 'شهادة تقدير' ? 'selected' : ''}>شهادة تقدير 📜</option>
+                        </select>
+                    </td>
+                    <td class="p-2.5 text-center">
+                        <button onclick="deleteStudent(${activeCompIdForModal}, ${idx})" class="text-rose-500 hover:bg-rose-50 px-2 py-1 rounded-lg font-bold transition">✕</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateStudentField(compId, idx, field, val) {
+            appData.studentsData[compId][idx][field] = val;
+            saveData();
+            showToast("تم تحديث بيانات الطالب");
+        }
+
+        function deleteStudent(compId, idx) {
+            appData.studentsData[compId].splice(idx, 1);
+            renderModalStudentsList();
+            saveData();
+            showToast("تم حذف الطالب من المسابقة", "🗑️");
+        }
+
+        // نافذة QR ورابط الترشيح
+        function openQrModal(compId, compName) {
+            document.getElementById('qrCompName').innerText = compName;
+            const code = `MOE-${compId}-1448`;
+            document.getElementById('qrCodeText').innerText = code;
+            document.getElementById('qrLinkInput').value = `https://musabaqat.moe.gov.sa/apply/${code}`;
+            document.getElementById('qrModal').classList.remove('hidden');
+            document.getElementById('qrModal').classList.add('flex');
+        }
+
+        function closeQrModal() {
+            document.getElementById('qrModal').classList.add('hidden');
+            document.getElementById('qrModal').classList.remove('flex');
+        }
+
+        function copyNominationLink() {
+            const copyText = document.getElementById('qrLinkInput');
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            showToast("تم نسخ رابط ترشيح الطلاب بنجاح", "📋");
+        }
+
+        // 4. سجل الجوائز والإنجازات
+        function getAllWinners() {
+            const winners = [];
+            for (const compId in appData.studentsData) {
+                const comp = appData.myPlan.find(p => p.id == compId);
+                const compName = comp ? comp.name : "مسابقة مدرسية";
+                appData.studentsData[compId].forEach(s => {
+                    if (s.result && s.result !== 'مشارك') {
+                        winners.push({ ...s, compName });
+                    }
+                });
+            }
+            return winners;
+        }
+
+        function renderAwards() {
+            const tbody = document.getElementById('awardsTableBody');
+            const allAwards = getAllWinners();
+
+            if (allAwards.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">لا توجد جوائز مسجلة حتى الآن. قم بتحديث نتائج الطلاب من تبويب "خطتي".</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = allAwards.map(item => `
+                <tr class="hover:bg-slate-50/70">
+                    <td class="p-3.5 font-extrabold text-slate-800">${item.name}</td>
+                    <td class="p-3.5 text-slate-600 text-xs">${item.class}</td>
+                    <td class="p-3.5 text-slate-700 font-semibold">${item.compName}</td>
+                    <td class="p-3.5 font-bold text-emerald-800">${item.score}/100</td>
+                    <td class="p-3.5">
+                        <span class="bg-amber-100 text-amber-900 border border-amber-200 px-3 py-1 rounded-full font-extrabold text-xs inline-block">
+                            🏆 ${item.result}
+                        </span>
+                    </td>
+                    <td class="p-3.5 no-print flex items-center gap-2">
+                        <button onclick="sendWhatsApp('${item.name.replace(/'/g, "\\'")}', '${item.compName.replace(/'/g, "\\'")}', '${item.result}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-xs">
+                            <span>💬</span>
+                            <span>تهنئة واتساب</span>
+                        </button>
+                        <button onclick="openSingleCertificate('${item.name.replace(/'/g, "\\'")}', '${item.class.replace(/'/g, "\\'")}', '${item.compName.replace(/'/g, "\\'")}', '${item.result}')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-xl text-xs font-bold transition">
+                            📜 شهادة
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function sendWhatsApp(studentName, compName, result) {
+            const msg = `السلام عليكم ورحمة الله وبركاته\nولي أمر الطالب الفاضل: *${studentName}*\n\nيسعدنا في *${appData.schoolName}* أن نبارك لكم تحقيق ابنكم (*${result}*) في *${compName}*.\nنعتز بتميزه ونتمنى له دوام التفوق والنجاح.\n\nمع تحيات رائد النشاط الطلابي: ${appData.coordinatorName}`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        // توليد شهادات الشكر
+        function createCertificateHTML(studentName, studentClass, compName, result) {
+            return `
+                <div class="border-8 border-double border-emerald-800 p-6 sm:p-10 rounded-2xl bg-gradient-to-b from-emerald-50/40 to-white text-center space-y-5 page-break-after">
+                    <div class="flex justify-between items-center text-xs font-bold text-slate-600 border-b border-emerald-200 pb-4">
+                        <div class="text-right">
+                            <p>المملكة العربية السعودية</p>
+                            <p class="text-emerald-800">وزارة التعليم</p>
+                            <p>${appData.educationOffice}</p>
+                        </div>
+                        <div class="text-3xl">🏆</div>
+                        <div class="text-left">
+                            <p>${appData.schoolName}</p>
+                            <p>إدارة النشاط الطلابي</p>
+                            <p>العام الدراسي 1448هـ</p>
+                        </div>
+                    </div>
+
+                    <div class="py-2">
+                        <h2 class="text-2xl sm:text-3xl font-black text-emerald-900">شهادة شكر وتقدير</h2>
+                        <p class="text-xs text-amber-700 font-bold mt-1">تُمنح تقديراً للتميز والإبداع الطلابي</p>
+                    </div>
+
+                    <div class="space-y-3 text-sm sm:text-base text-slate-700 leading-relaxed max-w-xl mx-auto">
+                        <p>تتقدم إدارة <strong>${appData.schoolName}</strong> بخالص الشكر والتقدير للطالب المتميز:</p>
+                        <p class="text-xl sm:text-2xl font-black text-slate-900 bg-amber-50 border border-amber-200 py-2 px-6 rounded-xl inline-block">${studentName}</p>
+                        <p class="text-xs text-slate-500 font-bold">الصف: ${studentClass}</p>
+                        <p>وذلك نظير مشاركته الفاعلة وحصوله على <strong class="text-emerald-800">(${result})</strong> في <strong>${compName}</strong>، سائلين الله له دوام التوفيق والسداد.</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-6 pt-6 text-xs font-bold text-slate-800">
+                        <div>
+                            <p class="text-emerald-800">رائد النشاط الطلابي</p>
+                            <p class="mt-2">${appData.coordinatorName}</p>
+                        </div>
+                        <div>
+                            <p class="text-emerald-800">مدير المدرسة</p>
+                            <p class="mt-2">${appData.principalName}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function openSingleCertificate(name, sClass, compName, result) {
+            document.getElementById('printableCertificate').innerHTML = createCertificateHTML(name, sClass, compName, result);
+            document.body.classList.add('print-only-cert');
+            document.getElementById('certModal').classList.remove('hidden');
+            document.getElementById('certModal').classList.add('flex');
+        }
+
+        function openBulkCertificatesModal() {
+            const winners = getAllWinners();
+            if (winners.length === 0) {
+                showToast("لا يوجد فائزون لإصدار شهادات لهم حالياً", "⚠️");
+                return;
+            }
+            document.getElementById('printableCertificate').innerHTML = winners.map(w =>
+                createCertificateHTML(w.name, w.class, w.compName, w.result)
+            ).join('<div class="my-6 border-t-2 border-dashed border-slate-300 no-print"></div>');
+            document.body.classList.add('print-only-cert');
+            document.getElementById('certModal').classList.remove('hidden');
+            document.getElementById('certModal').classList.add('flex');
+        }
+
+        function closeCertModal() {
+            document.body.classList.remove('print-only-cert');
+            document.getElementById('certModal').classList.add('hidden');
+            document.getElementById('certModal').classList.remove('flex');
+        }
+
+        // 5. التقارير الرسمية
+        function renderReports() {
+            document.getElementById('reportMinistryHeader').innerText = appData.educationOffice;
+            document.getElementById('reportSchoolHeader').innerText = `مدرسة: ${appData.schoolName}`;
+            document.getElementById('reportCoordinatorName').innerText = appData.coordinatorName;
+            document.getElementById('reportPrincipalName').innerText = appData.principalName;
+
+            const totalComps = appData.myPlan.length;
+            let totalStudents = 0;
+            let totalAwards = 0;
+            let rows = [];
+
+            for (const compId in appData.studentsData) {
+                const comp = appData.myPlan.find(p => p.id == compId);
+                const compName = comp ? comp.name : "مسابقة مدرسية";
+                appData.studentsData[compId].forEach(s => {
+                    totalStudents++;
+                    if (s.result && s.result !== 'مشارك') totalAwards++;
+                    rows.push({ ...s, compName });
+                });
+            }
+
+            document.getElementById('repTotalComps').innerText = totalComps;
+            document.getElementById('repTotalStudents').innerText = totalStudents;
+            document.getElementById('repTotalAwards').innerText = totalAwards;
+
+            const repTable = document.getElementById('reportTableBody');
+            if (rows.length === 0) {
+                repTable.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400 border border-slate-300">لا توجد بيانات طلاب مسجلة في الخطة حتى الآن.</td></tr>`;
+                return;
+            }
+
+            repTable.innerHTML = rows.map((r, index) => `
+                <tr>
+                    <td class="p-2 border border-slate-300 text-center font-semibold">${index + 1}</td>
+                    <td class="p-2 border border-slate-300 font-bold">${r.name}</td>
+                    <td class="p-2 border border-slate-300">${r.class}</td>
+                    <td class="p-2 border border-slate-300">${r.compName}</td>
+                    <td class="p-2 border border-slate-300 text-center font-bold">${r.score}</td>
+                    <td class="p-2 border border-slate-300 font-bold ${r.result !== 'مشارك' ? 'text-emerald-800' : 'text-slate-600'}">${r.result}</td>
+                </tr>
+            `).join('');
+        }
+
+        function printOfficialReport() {
+            document.body.classList.remove('print-only-cert');
+            window.print();
+        }
+
+        // نافذة إعدادات المدرسة
+        function openSettings() {
+            document.getElementById('settingSchoolName').value = appData.schoolName;
+            document.getElementById('settingSchoolStage').value = appData.schoolStage || "المرحلة الثانوية";
+            document.getElementById('settingEducationOffice').value = appData.educationOffice;
+            document.getElementById('settingCoordinatorName').value = appData.coordinatorName;
+            document.getElementById('settingPrincipalName').value = appData.principalName || "أنس سالم الصيدلاني";
+            document.getElementById('settingsModal').classList.remove('hidden');
+            document.getElementById('settingsModal').classList.add('flex');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.add('hidden');
+            document.getElementById('settingsModal').classList.remove('flex');
+        }
+
+        function saveSettings() {
+            appData.schoolName = document.getElementById('settingSchoolName').value.trim() || appData.schoolName;
+            appData.schoolStage = document.getElementById('settingSchoolStage').value;
+            appData.educationOffice = document.getElementById('settingEducationOffice').value.trim() || appData.educationOffice;
+            appData.coordinatorName = document.getElementById('settingCoordinatorName').value.trim() || appData.coordinatorName;
+            appData.principalName = document.getElementById('settingPrincipalName').value.trim() || appData.principalName;
+
+            syncHeaderInfo();
+            saveData();
+            closeSettings();
+            renderGuide();
+            renderReports();
+            showToast("تم حفظ بيانات المدرسة بنجاح");
+        }
+
+        // نافذة إضافة مسابقة خاصة
+        function openAddCustomModal() {
+            document.getElementById('customCompModal').classList.remove('hidden');
+            document.getElementById('customCompModal').classList.add('flex');
+        }
+
+        function closeAddCustomModal() {
+            document.getElementById('customCompModal').classList.add('hidden');
+            document.getElementById('customCompModal').classList.remove('flex');
+        }
+
+        function saveCustomComp() {
+            const nameInput = document.getElementById('customName');
+            const name = nameInput.value.trim();
+            const domain = document.getElementById('customDomain').value;
+            const stage = document.getElementById('customStage').value;
+
+            if (!name) {
+                showToast("يرجى إدخال اسم المسابقة أولاً", "⚠️");
+                return;
+            }
+
+            const newComp = {
+                id: Date.now(),
+                name: name,
+                domain: domain,
+                stage: stage,
+                status: 'مفتوح التسجيل'
+            };
+
+            appData.customComps.push(newComp);
+            appData.myPlan.push(newComp);
+            appData.studentsData[newComp.id] = [];
+
+            nameInput.value = '';
+            saveData();
+            closeAddCustomModal();
+            renderGuide();
+            showToast(`تمت إضافة "${name}" واعتمادها في خطتك`);
+        }
+
+        // التهيئة الأولية عند فتح الصفحة
+        window.addEventListener('DOMContentLoaded', () => {
+            syncHeaderInfo();
+            renderGuide();
+            updateDashboard();
+        });
+    </script>
+</body>
+</html>
