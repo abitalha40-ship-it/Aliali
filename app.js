@@ -575,7 +575,7 @@ let DIRTY=false;function save(){DIRTY=true;clearTimeout(tmr);tmr=setTimeout(pers
 function saveNow(){clearTimeout(tmr);const ok=persist();const e=document.querySelector('#sv');if(e)e.style.fontWeight='700'}
 function applyState(){if(S.G&&S.G.length){D.G=S.G;_GS=null}if(S.ren)applyRen();if(S.log)D.log=S.log;if(S.T)D.T=S.T.filter(t=>t[0]!=='الإجمالي');if(S.P)D.P=S.P.filter(p=>p[1]!=='None');if(S.start)START=new Date(S.start+'T00:00:00');calReset();if(!S.school)S.school='ثانوية أبي طلحة الأنصاري'}
 function prDl(){const css=[...document.querySelectorAll('style')].map(s=>s.textContent).join('\n');dl('print.html','<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>طباعة</title><style>'+css+' #pa{display:block!important}body>*:not(#pa){display:none!important}</style></head><body><div id="pa">'+$('#pa').innerHTML+'</div><script>setTimeout(function(){print()},400)<\/script></body></html>')}
-function pr0(h){$('#pa').innerHTML=h;const t0=performance.now();try{window.print()}catch(e){}const dtm=performance.now()-t0;
+function pr0(h){$('#pa').innerHTML=h;document.body.classList.add('pa-on');const clr=()=>{document.body.classList.remove('pa-on');window.removeEventListener('afterprint',clr)};window.addEventListener('afterprint',clr);const t0=performance.now();try{window.print()}catch(e){}const dtm=performance.now()-t0;
  if(window.claude&&dtm<60)setTimeout(function(){const d=$('#dm');if(d&&!d.innerHTML)d.innerHTML='<div class="dm" onclick="this.parentNode.innerHTML=\'\'"><div onclick="event.stopPropagation()"><p>إن لم تظهر نافذة الطباعة فنزّل نسخة قابلة للطباعة وافتحها من جهازك.</p><div class="bar" style="justify-content:center"><button class="btn" onclick="prDl()">تنزيل للطباعة (HTML)</button><button class="btn s" onclick="window.print()">إعادة الطباعة</button><button class="btn s" onclick="$(\'#dm\').innerHTML=\'\'">إغلاق</button></div></div></div>'},500)}
 function refreshDl(){let e=document.getElementById('lpg');if(!e){e=document.createElement('datalist');e.id='lpg';document.body.appendChild(e)}e.innerHTML=D.P.map(p=>p[1]).concat(OCC.map(o=>o[0])).map(n=>'<option value="'+esc(n)+'">').join('')}
 function tRenDone(v){const id=TREN;TREN=null;if(v&&v.trim())tRen(id,v);else go()}
@@ -652,7 +652,7 @@ views.push(function(){const cf=fxCfg(),ts=teachers().map(t=>t.n).filter(n=>!fixT
  +'<h2>المعلمون المختارون لتغطية العجز ('+sel.size+' من '+ts.length+')</h2><div class="bar">'+b5('fxSelAll(true)','تحديد الكل',1)+b5('fxSelAll(false)','إلغاء الكل',1)+'</div><div class="tw"><table><tr><th>اختيار</th><th>المعلم</th><th>المادة</th><th>النصاب</th><th>سقف 10%</th></tr>'+ts.map(n=>{const t=teachers().find(x=>x.n===n)||{s:'',qu:0};return'<tr><td><input type="checkbox" '+(sel.has(n)?'checked':'')+' onchange="fxSel(\''+esc(n)+'\',this.checked)"></td><td>'+esc(n)+'</td><td>'+esc(t.s)+'</td><td>'+t.qu+'</td><td>'+(RQ(n)||0)+'</td></tr>'}).join('')+'</table></div>'
  +'<div class="bar"><input id="fxn" placeholder="معلم نشاط ثابت جديد"><button class="btn s" onclick="fxAdd()">+ إضافة</button><button class="btn" onclick="genFix()">توليد الجدول</button></div><p>'+esc(FXMSG)+'</p></div>'
  +'<div class="card"><h2>فحص الحد الأدنى لكل فصل</h2><div class="tw"><table><tr><th>الفصل</th><th>الصف</th><th>ثابت/أسبوع</th><th>يُضاف من الـ10%</th><th>المطلوب/أسبوع</th><th>المجدول (الحد الأدنى–الأعلى)</th><th>الحالة</th></tr>'+fxStat().map(r=>'<tr><td>'+cchip(r[0])+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td><td>'+r[4]+'</td><td>'+r[5]+'</td><td class="'+(r[6]==='✔'?'ok':'er')+'">'+r[6]+'</td></tr>').join('')+'</table></div></div>'});
-const names=['لوحة المؤشرات','المعلمون 10%','البرامج والمناسبات','السجل الأسبوعي','المتابعة والشواهد QR','الإعدادات والطباعة','جدول العام','التصدير','الربط والتوزيع','الملفات والتقارير','الإصدار الشامل','حصص اليوم','التقويم والمناسبات','الفترات اللاصفية','الإشعارات والتقارير','النسخ والاستيراد','التنسيق والألوان','👥','التكليفات','تحليل الفصول (10%)','الجدول المدرسي','النشاط الثابت','الدليل','الخطة التشغيلية','الـ10% حسب المواد'];
+const names=['لوحة المؤشرات','المعلمون 10%','البرامج والمناسبات','السجل الأسبوعي','المتابعة والشواهد QR','الإعدادات والطباعة','جدول العام','التصدير','الربط والتوزيع','الملفات والتقارير','الإصدار الشامل','حصص اليوم','التقويم والمناسبات','الفترات اللاصفية','الإشعارات والتقارير','النسخ والاستيراد','التنسيق والألوان','التوزيع بالمعلم','التكليفات','تحليل الفصول (10%)','الجدول المدرسي','النشاط الثابت','الدليل','الخطة التشغيلية','الـ10% حسب المواد'];
 /* إدارة التبويبات: إخفاء/إظهار/ترتيب/إعادة تسمية + تبويبات مخصصة مرتبطة بالأداة */
 const TM=()=>{S.tabs=S.tabs||{ord:null,hid:[],nm:{},cus:[],nid:1};return S.tabs},tq=id=>typeof id==='number'?id:"'"+id+"'";
 function tList(){const T=TM(),all=[...names.map((_,i)=>i),...T.cus.map(c=>c.id)],ord=(T.ord||[]).filter(x=>all.includes(x));return ord.concat(all.filter(x=>!ord.includes(x)))}
@@ -845,7 +845,7 @@ function planExecCard(){const rows=D.log.filter(r=>r[8]!==2);const by={};
   +'<div class="bar">'+b5('tab='+idx+';go()','فتح تبويب تنفيذ البرامج',1)+'</div></div>'}
 function planFullHtml(){
  const strip=h=>h.replace(/<button[\s\S]*?<\/button>/g,'').replace(/<select[\s\S]*?<\/select>/g,'').replace(/<input[^>]*>/g,'');
- const cover=head('الخطة التشغيلية الشاملة للنشاط الطلابي 1448هـ')+'<p><b>المدرسة:</b> '+esc(S.school||'')+' · <b>الفصل الدراسي:</b> '+esc(S.regSem||'')+' · <b>رائد النشاط:</b> '+esc(S.leader||'')+' · <b>مدير المدرسة:</b> '+esc(S.principal||'')+'</p>';
+ const cover='<h2>الخطة التشغيلية الشاملة للنشاط الطلابي 1448هـ</h2><p><b>المدرسة:</b> '+esc(S.school||'')+' · <b>الفصل الدراسي:</b> '+esc(S.regSem||'')+' · <b>رائد النشاط:</b> '+esc(S.leader||'')+' · <b>مدير المدرسة:</b> '+esc(S.principal||'')+'</p>';
  const C=S.regComm||[];
  const comm='<h3>لجنة النشاط المدرسي</h3>'+tbl([['م','العضو','الاسم','الوظيفة','المهام'],...REG_COMM.map((r,i)=>[String(i+1),r,(C[i]||{}).n||'',(C[i]||{}).j||'',(C[i]||{}).t||''])]);
  const plan=strip(views[names.indexOf('الخطة التشغيلية')]());
@@ -1285,8 +1285,12 @@ let GRP_SEL={};
 function groupView(gi){const g=GROUPS[gi];const cur=(GRP_SEL[gi]!==undefined)?GRP_SEL[gi]:g[1][0];
  const sel='<div class="bar"><label>القسم <select onchange="GRP_SEL['+gi+']=+this.value;go()">'+g[1].map(id=>'<option value="'+id+'"'+(id===cur?' selected':'')+'>'+esc(names[id]||('قسم '+id))+'</option>').join('')+'</select></label></div>';
  return sel+views[cur]();}
+/* تبويبات مخفية من القوائم (ما زال كودها محفوظًا ويمكن إعادتها) */
+const HIDDEN_FROM_MENU=['مقارنة الـ10%','الإصدار الشامل','الإشعارات والتقارير','الواتساب'];
+GROUPS.forEach(g=>{g[1]=g[1].filter(id=>!HIDDEN_FROM_MENU.includes(names[id]))});
 GROUPS.forEach((g,gi)=>{views.push(()=>groupView(gi));names.push(g[0])});
-(function(){const T=TM();const hide=new Set(T.hid||[]);GROUPS.forEach(g=>g[1].forEach(id=>hide.add(id)));T.hid=[...hide];save()})();
+(function(){const T=TM();const hide=new Set(T.hid||[]);GROUPS.forEach(g=>g[1].forEach(id=>hide.add(id)));
+HIDDEN_FROM_MENU.forEach(n=>{const i=names.indexOf(n);if(i>=0)hide.add(i)});T.hid=[...hide];save()})();
 try{go()}catch(e){}
 
 

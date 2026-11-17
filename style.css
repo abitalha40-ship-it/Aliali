@@ -30,7 +30,14 @@ input,select{font:inherit;padding:7px;border:1px solid var(--bd);border-radius:8
 .fh img{height:50px}.ed{cursor:pointer}.ed:hover{outline:1px dashed var(--pr)}.cc{display:inline-block;padding:1px 9px;border-radius:10px;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}.ft{background:#4472c4;color:#fff;text-align:center;padding:6px;font-weight:700;margin:6px 0}
 .sg{display:flex;justify-content:space-between;margin-top:26px;font-weight:700;font-size:13px}
 .qc{display:inline-block;width:32%;border:1px solid #888;margin:3px;padding:6px;text-align:center;font-size:11px;vertical-align:top}.qc svg{width:110px;height:110px}
-@media print{body>*:not(#pa){display:none!important}#pa{display:block!important}td,th{-webkit-print-color-adjust:exact;print-color-adjust:exact}th{background:#4472c4!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{size:A4 landscape;margin:10mm}}
+@media print{
+  body>#pa{display:none!important;position:static!important}
+  body.pa-on>#pa{display:block!important}
+  body.pa-on>main,body.pa-on>nav,body.pa-on>header,body.pa-on>#toast,body.pa-on>#dm{display:none!important}
+  body>nav,body>header,body>#toast,body>#dm{display:none!important}
+  body,body>main{display:block!important;width:100%!important;min-height:0!important}
+}
+@media print{td,th{-webkit-print-color-adjust:exact;print-color-adjust:exact}th{background:#4472c4!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{size:A4 landscape;margin:10mm}}
 /* ---- */
 /* ===== واجهة احترافية: هوية وزارة التعليم ===== */
 :root{--brand:#00796b;--brand2:#1f4e8c;--ink:#14232a;--mute:#5b6b70;--line:#dbe4e7;--card:#ffffff;--bg:#f3f6f8;--soft:#eef6f5;--radius:14px;--shadow:0 1px 2px rgba(16,24,40,.06),0 4px 14px rgba(16,24,40,.06)}
