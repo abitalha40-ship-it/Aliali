@@ -59,7 +59,7 @@ function yearForm(){const W=[];for(let w=Math.max(1,YW.f||1);w<=Math.min(18,YW.t
  const rows=ks.map(k=>'<tr><td style="min-width:110px"><b>'+esc(k)+'</b><br><span class="mu">'+cnt(r=>r[by]===k)+' حصة</span></td>'+W.map(w=>'<td style="min-width:120px">'+D.log.filter(r=>r[0]===w&&r[by]===k).sort((a,b)=>DAYS.indexOf(a[1])-DAYS.indexOf(b[1])||a[2]-b[2]).map(r=>'<b>'+sh[r[1]]+' ح'+r[2]+'</b> '+(gm==='c'?esc(r[3]):cchip(r[6]))+'<br>'+esc(r[5])).join('<hr>')+'</td>').join('')+'</tr>').join('');
  const hd=W.map(w=>'<th>أسبوع '+w+'<br>'+dt(w,'الأحد').toLocaleDateString('ar-SA-u-ca-gregory',{day:'numeric',month:'numeric'})+'</th>').join('');
  return head('جدول العام – توزيع حصص النشاط الطلابي (الفصل الدراسي الأول)')+'<table style="font-size:11px"><tr><th>'+(gm==='c'?'الفصل':'المعلم')+'</th>'+hd+'</tr>'+rows+'</table>'+sign()}
-views.push(function(){return'<div class="card"><div class="bar"><label>من أسبوع <input type="number" min="1" max="18" value="'+(YW.f||1)+'" style="width:70px" onchange="YW.f=+this.value;go()"></label><label>إلى أسبوع <input type="number" min="1" max="18" value="'+(YW.t||18)+'" style="width:70px" onchange="YW.t=+this.value;go()"></label><label>العرض <select onchange="gm=this.value;go()"><option value="t"'+(gm==='t'?' selected':'')+'>صفوف حسب المعلم</option><option value="c"'+(gm==='c'?' selected':'')+'>صفوف حسب الفصل</option></select></label><button class="btn" onclick="pr(yearForm())">طباعة جدول العام</button></div><p class="mu">كل حصص النشاط في 18 أسبوعًا. كل خلية: اليوم ورقم الحصة، ثم الفصل (أو المعلم) واسم البرنامج.</p><div class="tw">'+yearForm()+'</div></div>'});
+views.push(function(){return'<div class="card"><div class="bar"><label>من أسبوع <input type="number" min="1" max="18" value="'+(YW.f||1)+'" style="width:70px" onchange="YW.f=+this.value;go()"></label><label>إلى أسبوع <input type="number" min="1" max="18" value="'+(YW.t||18)+'" style="width:70px" onchange="YW.t=+this.value;go()"></label><label>العرض <select onchange="gm=this.value;go()"><option value="t"'+(gm==='t'?' selected':'')+'>صفوف حسب المعلم</option><option value="c"'+(gm==='c'?' selected':'')+'>صفوف حسب الفصل</option></select></label><button class="btn" onclick="gridPrintAll()">طباعة جدول العام</button></div><p class="mu">كل حصص النشاط في 18 أسبوعًا. كل خلية: اليوم ورقم الحصة، ثم الفصل (أو المعلم) واسم البرنامج.</p><div class="tw">'+yearForm()+'</div></div>'});
 const dr=r=>[r[0],fd(dt(r[0],r[1])),r[1],r[2],r[3],r[6],r[5],r[4]];
 function mat(by){const ks=[...new Set(D.log.map(r=>r[by]))].sort((a,b)=>String(a).localeCompare(String(b),'ar'));return[[by===6?'الفصل':'المعلم',...Array.from({length:18},(_,i)=>'أسبوع '+(i+1)+' ('+dt(i+1,'الأحد').toLocaleDateString('ar-SA-u-ca-gregory',{day:'numeric',month:'numeric'})+')')],...ks.map(k=>[k,...Array.from({length:18},(_,i)=>D.log.filter(r=>r[0]===i+1&&r[by]===k).sort((a,b)=>DAYS.indexOf(a[1])-DAYS.indexOf(b[1])||a[2]-b[2]).map(r=>r[1]+' ح'+r[2]+' '+(by===6?r[3]:r[6])+' - '+r[5]).join('\n'))])]}
 const HD=['الأسبوع','التاريخ','اليوم','الحصة','المعلم','الفصل','البرنامج','المجال'];
@@ -1301,3 +1301,12 @@ try{go()}catch(e){}
 
 /* ===== توحيد بيانات المدرسة مع أداة المسابقات ===== */
 (function(){try{const sh=JSON.parse(localStorage.getItem('schoolShared_v1')||'null');if(sh){if(sh.schoolName)S.school=sh.schoolName;if(sh.principalName)S.principal=sh.principalName;if(sh.coordinatorName)S.leader=sh.coordinatorName}}catch(e){}})();
+
+/* طباعة جدول العام على دفعات من 6 أسابيع: كل دفعة تحمل أسماء كل المعلمين وبخط مقروء */
+function gridPrintAll(){const f=YW.f||1,t=YW.t||18;let out='';
+ for(let s=Math.max(1,f);s<=Math.min(18,t);s+=6){YW.f=s;YW.t=Math.min(t,s+5,18);const html=yearForm();
+  const tmp=document.createElement('div');tmp.style.cssText='position:absolute;left:-99999px;top:0;width:1040px;background:#fff';tmp.innerHTML=html;document.body.appendChild(tmp);
+  const h=tmp.scrollHeight||600;tmp.remove();const z=Math.min(1,Math.max(.5,620/h));
+  const th=html.replace('<table style="font-size:11px"><tr>','<table style="font-size:11px"><thead><tr>').replace('</tr>','</tr></thead><tbody>').replace('</table>','</tbody></table>');
+  out+='<div style="page-break-after:always;zoom:'+z.toFixed(2)+'">'+th+'</div>'}
+ YW.f=f;YW.t=t;pr(out)}
